@@ -23,4 +23,4 @@ References used for the poster presentation:
 
 [5] van der Maas, H. L. J. (2024). Complex-systems research in psychology. SFI Press. https://doi.org/10.37911/9781947864634
 
-[5] Wang, S. B., Robinaugh, D., Millner, A., Fortgang, R., & Nock, M. (2023). Mathematical and Computational Modeling of Suicide as a Complex Dynamical System. PsyArXiv. https://doi.org/10.31234/osf.io/b29cs
+[6] Wang, S. B., Robinaugh, D., Millner, A., Fortgang, R., & Nock, M. (2023). Mathematical and Computational Modeling of Suicide as a Complex Dynamical System. PsyArXiv. https://doi.org/10.31234/osf.io/b29cs
