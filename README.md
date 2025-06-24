@@ -59,4 +59,6 @@ Visser, I., & Speekenbrink, M. (2022). Mixture and hidden Markov models with R. 
 
 [15] Wang, S. B., Robinaugh, D., Millner, A., Fortgang, R., & Nock, M. (2023). Mathematical and computational modeling of suicide as a complex dynamical system. PsyArXiv. https://doi.org/10.31234/osf.io/b29cs
 
-[16] Zeeman, E. C. (1976). Catastrophe theory. Scientific American, 4, 65–83.
+[16] World Health Organization (2025). Suicide worldwide in 2021: Global health estimates. World Health Organization.
+
+[17] Zeeman, E. C. (1976). Catastrophe theory. Scientific American, 4, 65–83.
