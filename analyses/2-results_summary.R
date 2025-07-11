@@ -1,18 +1,40 @@
 #------------------------------------------------------------------------------|
-# DESCRIPTIVES                                                             ####
+# DESCRIPTIVES - TABLES AND BOXPLOTS                                       ####
 #------------------------------------------------------------------------------|
+################# CATASTROPHE FLAGS ###################
 
-bimodal <- which(unlist(bimodal_test) == TRUE)
+################# change points ###################
+
+# change points based on variance
+table(unlist(lapply(cpt_res, function(x) length(cpts(x)))))
+
+# change points based on means
+
+################# bimodality ###################
+
+# descriptives of the found bimodality coefficients
+bc_res_vector <- unlist(bc_res)
+mean(bc_res_vector)
+sd(bc_res_vector)
+range(bc_res_vector)
+sum(bc_res_vector > .55)
+
+
+################# PARAMETER DESCRIPTIVES ###################
+
+# change data to make it ideal for plotting
+plot_data <- data %>%
+  pivot_longer(stressor:int_change, names_to = 'variable', values_to = 'value') %>%
+  mutate(stress_lvl = case_when(stress_lvl == "high" ~ "High",
+                                stress_lvl == "low" ~ "Low"))
 
 ################# neither ###################
-
 
 # descriptives for external change hysteresis individuals
 all_sig_hysteresis <- union(sig_hysteresis_avstate, sig_hysteresis_extchange)
 
-nohysteresis_subset_overall <- data %>%
-  filter(!((pp_nr + 1) %in% all_sig_hysteresis)) %>%
-  filter(time == 1)
+nohysteresis_subset_overall <- plot_data %>%
+  filter(!((pp_nr + 1) %in% all_sig_hysteresis)) 
 
 # create table
 nohysteresis_table <- arsenal::tableby(par_changed ~ stress_lvl + par_value, 
@@ -22,43 +44,78 @@ nohysteresis_table <- arsenal::tableby(par_changed ~ stress_lvl + par_value,
 
 # create meaningful labels
 arsenal::labels(nohysteresis_table)  <- c(par_changed = 'Varied Parameter', 
-                                       stress_lvl = "Stress Level",
-                                       par_value = "Parameter Value")
+                                          stress_lvl = "Stress Level",
+                                          par_value = "Parameter Value")
 
 # examine table
 summary(nohysteresis_table, text = TRUE, title = "No Hysteresis - Parameters")
 
 nohysteresis_subset_vars <- data %>%
   filter(!((pp_nr + 1) %in% all_sig_hysteresis))
-
 nohysteresis_vars_table <- arsenal::tableby(par_changed ~ stressor + 
-                                           av_state + urge_escape + sui_thoughts + 
-                                           other_escape + ext_change + 
-                                           int_change, data = nohysteresis_subset_vars,
-                                         numeric.stats = c("mean", "median", "range"),
-                                         test = FALSE, total = FALSE)
+                                              av_state + urge_escape + sui_thoughts + 
+                                              other_escape + ext_change + 
+                                              int_change, data = nohysteresis_subset_vars,
+                                            numeric.stats = c("mean", "median", "range"),
+                                            test = FALSE, total = FALSE)
 
 arsenal::labels(nohysteresis_vars_table) <- c(par_changed = 'Varied Parameter', 
-                                           stressor = "Stress",
-                                           av_state = "Aversive State",
-                                           urge_escape = "Urge to Escape",
-                                           sui_thoughts = "Suicidal Thoughts",
-                                           other_escape = "Other Escape Strategies",
-                                           ext_change = "External-Focused Change",
-                                           int_change = "Internal-Focused Change")
+                                              stressor = "Stress",
+                                              av_state = "Aversive State",
+                                              urge_escape = "Urge to Escape",
+                                              sui_thoughts = "Suicidal Thoughts",
+                                              other_escape = "Other Escape Strategies",
+                                              ext_change = "External-Focused Change",
+                                              int_change = "Internal-Focused Change")
 
 summary(nohysteresis_vars_table, text = TRUE, title = "No Hysteresis - Variables")
 
+# Affected Variables for Individuals with No Detected Hysteresis, High Stress (N = 403)
 
+nohysteresis_subset_overall %>%
+  filter(stress_lvl == "High") %>%
+  ggplot(mapping = aes(x = par_changed, y = value, fill = variable)) +
+    geom_boxplot(outliers = FALSE, width = .5) +
+    #ggtitle("Affected Variables for Individuals with No Detected Hysteresis, High Stress (N = 403)") +
+    ylab("Variable Value") +
+    xlab("Parameter Changed") +
+    scale_fill_discrete(labels = c("Aversive internal state",
+                                   "External coping",
+                                   "Internal coping",
+                                   "Other escape strategies",
+                                   "Stress",
+                                   "Suicidal thoughts",
+                                   "Urge to escape")) +
+    theme_classic() 
 
+# Affected Variables for Individuals with No Detected Hysteresis, Low Stress (N = 483)
+
+nohysteresis_subset_overall %>%
+  filter(stress_lvl == "Low") %>%
+  ggplot(mapping = aes(x = par_changed, y = value, fill = variable)) +
+  geom_boxplot(outliers = FALSE, width = .5) +
+  #ggtitle("Affected Variables for Individuals with No Detected Hysteresis, Low Stress (N = 483)") +
+  ylab("Variable Value") +
+  xlab("Parameter Changed") +
+  scale_fill_discrete(labels = c("Aversive internal state",
+                                 "External coping",
+                                 "Internal coping",
+                                 "Other escape strategies",
+                                 "Stress",
+                                 "Suicidal thoughts",
+                                 "Urge to escape")) +
+  theme_classic() 
 
 ################# ext_change hysteresis ###################
 
+bimodal <- which(unlist(bimodal_test) == TRUE)
+
+# bimodal and significant hysteresis
+bim_sig_extchange <- sig_hysteresis_extchange[which(sig_hysteresis_extchange %in% bimodal)]
 
 # descriptives for external change hysteresis individuals
-extchange_subset_overall <- data %>%
-  filter(((pp_nr + 1) %in% sig_hysteresis_extchange) & ((pp_nr + 1) %in% bimodal)) %>%
-  filter(time == 1)
+extchange_subset_overall <- plot_data %>%
+  filter((pp_nr + 1) %in% bim_sig_extchange)
 
 # create table
 extchange_table <- arsenal::tableby(par_changed ~ stress_lvl + par_value, 
@@ -95,14 +152,50 @@ arsenal::labels(extchange_vars_table) <- c(par_changed = 'Varied Parameter',
 
 summary(extchange_vars_table, text = TRUE, title = "External Change - Variables")
 
+# Affected Variables for Individuals with Hysteresis - External Coping, High Stress (N = 23)
+
+extchange_subset_overall %>%
+  filter(stress_lvl == "High") %>%
+  ggplot(extchange_subset_overall, mapping = aes(x = par_changed, y = value, fill = variable)) +
+    geom_boxplot(outliers = FALSE, width = .5) +
+    # ggtitle("Affected Variables for Individuals with Hysteresis - External Coping, High Stress (N = 23)") +
+    ylab("Variable Value") +
+    xlab("Parameter Changed") +
+    scale_fill_discrete(labels = c("Aversive internal state",
+                                   "External coping",
+                                   "Internal coping",
+                                   "Other escape strategies",
+                                   "Stress",
+                                   "Suicidal thoughts",
+                                   "Urge to escape")) +
+    theme_classic() 
+
+# Affected Variables for Individuals with Hysteresis - External Coping, Low Stress (N = 6)
+
+extchange_subset_overall %>%
+  filter(stress_lvl == "Low") %>%
+  ggplot(extchange_subset_overall, mapping = aes(x = par_changed, y = value, fill = variable)) +
+  geom_boxplot(outliers = FALSE, width = .5) +
+  #ggtitle("Affected Variables for Individuals with Hysteresis - External Coping, Low Stress (N = 6)") +
+  ylab("Variable Value") +
+  xlab("Parameter Changed") +
+  scale_fill_discrete(labels = c("Aversive internal state",
+                                 "External coping",
+                                 "Internal coping",
+                                 "Other escape strategies",
+                                 "Stress",
+                                 "Suicidal thoughts",
+                                 "Urge to escape")) +
+  theme_classic() 
 
 ################# av_state hysteresis ###################
 
+# bimodal and significant hysteresis
+bim_sig_avstate <- sig_hysteresis_avstate[which(sig_hysteresis_avstate %in% bimodal)]
 
-# descriptives for aversive state hysteresis individuals
-avstate_subset_overall <- data %>%
-  filter(((pp_nr + 1) %in% sig_hysteresis_avstate) & ((pp_nr + 1) %in% bimodal)) %>%
-  filter(time == 1)
+# descriptives for external change hysteresis individuals
+avstate_subset_overall <- plot_data %>%
+  filter(((pp_nr + 1) %in% bim_sig_avstate)) 
 
 # create table
 avstate_table <- arsenal::tableby(par_changed ~ stress_lvl + par_value, 
@@ -139,10 +232,49 @@ arsenal::labels(avstate_vars_table) <- c(par_changed = 'Varied Parameter',
 
 summary(avstate_vars_table, text = TRUE, title = "Aversive State - Variables")
 
+# Affected Variables for Individuals with Hysteresis - Aversive Internal State, High Stress (N = 11)
+
+avstate_subset_overall %>%
+  filter(stress_lvl == "High") %>%
+  ggplot(avstate_subset_overall, mapping = aes(x = par_changed, y = value, fill = variable)) +
+    geom_boxplot(outliers = FALSE, width = .5) +
+    #ggtitle("Affected Variables for Individuals with Hysteresis - Aversive Internal State, High Stress (N = 11)") +
+    ylab("Variable Value") +
+    xlab("Parameter Changed") +
+    scale_fill_discrete(labels = c("Aversive internal state",
+                                   "External coping",
+                                   "Internal coping",
+                                   "Other escape strategies",
+                                   "Stress",
+                                   "Suicidal thoughts",
+                                   "Urge to escape")) +
+    theme_classic() 
+
+# Affected Variables for Individuals with Hysteresis - Aversive Internal State, Low Stress (N = 9)
+
+avstate_subset_overall %>%
+  filter(stress_lvl == "Low") %>%
+  ggplot(avstate_subset_overall, mapping = aes(x = par_changed, y = value, fill = variable)) +
+  geom_boxplot(outliers = FALSE, width = .5) +
+  #ggtitle("Affected Variables for Individuals with Hysteresis - Aversive Internal State, Low Stress (N = 9)") +
+  ylab("Variable Value") +
+  xlab("Parameter Changed") +
+  scale_fill_discrete(labels = c("Aversive internal state",
+                                 "External coping",
+                                 "Internal coping",
+                                 "Other escape strategies",
+                                 "Stress",
+                                 "Suicidal thoughts",
+                                 "Urge to escape")) +
+  theme_classic() 
+
+
 #------------------------------------------------------------------------------|
-# PLOTTING                                                                 ####
+# PLOTTING FOR INTERIM RESULTS                                             ####
 #------------------------------------------------------------------------------|
 
+# plots were created using both base R for quick plotting and then ggplot for
+# pretty plotting
 
 ################# limit cycle ###################
 
@@ -172,6 +304,23 @@ cycle_labels <- c("Suicidal Thoughts", "Stress",
 legend("topright", inset = c(-0.335, 0.2), lty = 1, lwd = 2, cex = 0.6, col = cycle_cols, 
        legend = cycle_labels, title = "Variables", bty = "n")
 
+ggplot(plot_data_limit, mapping = aes(x = time, y = value, color = variable)) +
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = unlist(cps[253]), linewidth = 0.75) +
+  theme_classic() +
+  ggtitle("Participant Nr. 253") +
+  xlab("Time in Minutes") +
+  ylab("Variable Value") +
+  labs(color = "Variable") +
+  scale_color_discrete(labels = c("Aversive internal state",
+                                  "External coping",
+                                  "Internal coping",
+                                  "Other escape strategies",
+                                  "Stress",
+                                  "Suicidal thoughts",
+                                  "Urge to escape")) +
+  theme(plot.title = element_text(hjust=0.5))
+
 ################# hysteresis ###################
 
 # set plot margins
@@ -196,6 +345,23 @@ lines(hyst_data$other_escape, col = "chartreuse")
 # add legend
 legend("topright", inset = c(-0.335, 0.2), lty = 1, lwd = 2, cex = 0.6, col = cycle_cols, 
        legend = cycle_labels, title = "Variables", bty = "n")
+
+ggplot(plot_hysteresis, mapping = aes(x = time, y = value, color = variable)) +
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = unlist(cps[634]), linewidth = 0.75) +
+  theme_classic() +
+  ggtitle("Participant Nr. 634") +
+  xlab("Time in Minutes") +
+  ylab("Variable Value") +
+  labs(color = "Variable") +
+  scale_color_discrete(labels = c("Aversive internal state",
+                                  "External coping",
+                                  "Internal coping",
+                                  "Other escape strategies",
+                                  "Stress",
+                                  "Suicidal thoughts",
+                                  "Urge to escape")) +
+  theme(plot.title = element_text(hjust=0.5))
 
 ################# critical hysteresis ###################
 
@@ -222,6 +388,23 @@ lines(hyst2_data$other_escape, col = "chartreuse")
 legend("topright", inset = c(-0.335, 0.2), lty = 1, lwd = 2, cex = 0.6, col = cycle_cols, 
        legend = cycle_labels, title = "Variables", bty = "n")
 
+ggplot(plot_data_hyst, mapping = aes(x = time, y = value, color = variable)) +
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = unlist(cps[768]), linewidth = 0.75) +
+  theme_classic() +
+  ggtitle("Participant Nr. 768") +
+  xlab("Time in Minutes") +
+  ylab("Variable Value") +
+  labs(color = "Variable") +
+  scale_color_discrete(labels = c("Aversive internal state",
+                                  "External coping",
+                                  "Internal coping",
+                                  "Other escape strategies",
+                                  "Stress",
+                                  "Suicidal thoughts",
+                                  "Urge to escape")) +
+  theme(plot.title = element_text(hjust=0.5))
+
 
 ################# converging on values ###################
 
@@ -247,6 +430,24 @@ lines(conv_data$other_escape, col = "chartreuse")
 # add legend
 legend("topright", inset = c(-0.335, 0.2), lty = 1, lwd = 2, cex = 0.6, col = cycle_cols, 
        legend = cycle_labels, title = "Variables", bty = "n")
+
+ggplot(plot_data_converge, mapping = aes(x = time, y = value, color = variable)) +
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = unlist(cps[259]), linewidth = 0.75) +
+  theme_classic() +
+  ggtitle("Participant Nr. 258") +
+  xlab("Time in Minutes") +
+  ylab("Variable Value") +
+  labs(color = "Variable") +
+  scale_color_discrete(labels = c("Aversive internal state",
+                                  "External coping",
+                                  "Internal coping",
+                                  "Other escape strategies",
+                                  "Stress",
+                                  "Suicidal thoughts",
+                                  "Urge to escape")) +
+  theme(plot.title = element_text(hjust=0.5))
+
 
 ################# false positive ###################
 
@@ -285,3 +486,8 @@ options(scipen = 999)
 plot(1:6, bic_frame$BIC, xlab = "Fit", ylab = "BIC", type = "b", xaxt = "n", cex.axis = 0.5, 
      las = 1, bty = "n", ylim = c(-50000,-100000))
 axis(1, at = 1:6, labels = bic_frame$Fit, cex.axis = 0.5)
+
+ggplot(bic_frame, mapping = aes(x = Fit, y = BIC, fill = Fit)) +
+  geom_col() + 
+  scale_x_discrete(labels =)
+  theme_classic()
